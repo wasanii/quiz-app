@@ -26,3 +26,4 @@ $questions = fetchCsvData($csvUrl);
 
 // Example: output count of questions
 // echo 'Loaded ' . count($questions) . " questions\n";
+?>
