@@ -1,14 +1,28 @@
 <?php
-$questions = [
-    [
-        'question' => 'What is 2 + 2?',
-        'choices' => ['3', '4', '5', '6']
-    ],
-    [
-        'question' => 'Which is the largest ocean?',
-        'choices' => ['Atlantic', 'Pacific', 'Indian', 'Arctic']
-    ],
-];
+require_once __DIR__ . '/fetch_questions.php';
+
+// Convert raw CSV rows into an array with 'question' and 'choices' keys
+$formatted = [];
+foreach ($questions as $i => $row) {
+    // Skip header row if it contains text like "Question" or "\xE5\x95\x8F\xE9\xA1\x8C"
+    if ($i === 0 && isset($row[0]) && preg_match('/(question|\xE5\x95\x8F)/i', $row[0])) {
+        continue;
+    }
+
+    $questionText = $row[0] ?? '';
+    if ($questionText === '') {
+        continue;
+    }
+    $choices = array_slice($row, 1);
+    $choices = array_values(array_filter($choices, fn($c) => $c !== ''));
+
+    $formatted[] = [
+        'question' => $questionText,
+        'choices'  => $choices,
+    ];
+}
+
+$questions = $formatted;
 ?>
 <!DOCTYPE html>
 <html lang="en">
