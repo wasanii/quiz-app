@@ -9,12 +9,19 @@ foreach ($questions as $i => $row) {
         continue;
     }
 
-    $questionText = $row[0] ?? '';
+    // CSV columns: 0:年度, 1:出題方式, 2:番号, 3:問題文, 4-7:選択肢1-4
+    $mode        = $row[1] ?? '';
+    $questionText = $row[3] ?? '';
     if ($questionText === '') {
         continue;
     }
-    $choices = array_slice($row, 1);
-    $choices = array_values(array_filter($choices, fn($c) => $c !== ''));
+
+    if ($mode === '○×') {
+        $choiceCols = array_slice($row, 4, 2); // 選択肢1-2
+    } else {
+        $choiceCols = array_slice($row, 4, 4); // 選択肢1-4 (不足分は除外)
+    }
+    $choices = array_values(array_filter($choiceCols, fn($c) => $c !== ''));
 
     $formatted[] = [
         'question' => $questionText,
@@ -25,7 +32,7 @@ foreach ($questions as $i => $row) {
 $questions = $formatted;
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -39,7 +46,7 @@ $questions = $formatted;
         <?php foreach ($questions as $index => $q): ?>
             <div class="mb-4">
                 <p class="fw-bold">
-                    <?php echo htmlspecialchars($q['question'], ENT_QUOTES, 'UTF-8'); ?>
+                    <?php echo nl2br(htmlspecialchars($q['question'], ENT_QUOTES, 'UTF-8')); ?>
                 </p>
                 <?php foreach ($q['choices'] as $choiceIndex => $choice): ?>
                     <div class="form-check">
