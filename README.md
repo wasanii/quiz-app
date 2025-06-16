@@ -17,8 +17,8 @@ php test_format.php
 
 ## Progress storage
 
-Your current question index is stored in the browser using `localStorage` under
-the key `current`. When the page is reloaded it resumes from that index. To
-reset your progress, open your browser's developer tools, locate the
-`localStorage` entry for the site and remove the `current` item (or clear all
-stored data).
+Your current question index and the number of correct answers are stored in the
+browser using `localStorage` under the keys `current` and `score`. When the
+page is reloaded it resumes from that index with your score intact. To reset
+your progress, open your browser's developer tools, locate the `localStorage`
+entry for the site and remove both items (or clear all stored data).
