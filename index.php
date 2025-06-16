@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/fetch_questions.php';
 
-// Convert raw CSV rows into an array with 'question' and 'choices' keys
+// Convert raw CSV rows into an array with question, choices, answer and explanation
 $formatted = [];
 foreach ($questions as $i => $row) {
     // Skip header row returned from the CSV
@@ -9,7 +9,7 @@ foreach ($questions as $i => $row) {
         continue;
     }
 
-    // CSV columns: 0:年度, 1:出題方式, 2:番号, 3:問題文, 4-7:選択肢1-4
+    // CSV columns: 0:年度, 1:出題方式, 2:番号, 3:問題文, 4-7:選択肢1-4, 8:正答, 9:解説
     $mode        = $row[1] ?? '';
     $questionText = $row[3] ?? '';
     if ($questionText === '') {
@@ -22,10 +22,14 @@ foreach ($questions as $i => $row) {
         $choiceCols = array_slice($row, 4, 4); // 選択肢1-4 (不足分は除外)
     }
     $choices = array_values(array_filter($choiceCols, fn($c) => $c !== ''));
+    $answer      = $row[8] ?? '';
+    $explanation = $row[9] ?? '';
 
     $formatted[] = [
-        'question' => $questionText,
-        'choices'  => $choices,
+        'question'    => $questionText,
+        'choices'     => $choices,
+        'answer'      => $answer,
+        'explanation' => $explanation,
     ];
 }
 
@@ -42,25 +46,106 @@ $questions = $formatted;
 <body>
 <div class="container my-5">
     <h1 class="mb-4">Quiz</h1>
-    <form>
-        <?php foreach ($questions as $index => $q): ?>
-            <div class="mb-4">
-                <p class="fw-bold">
-                    <?php echo nl2br(htmlspecialchars($q['question'], ENT_QUOTES, 'UTF-8')); ?>
-                </p>
-                <?php foreach ($q['choices'] as $choiceIndex => $choice): ?>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="question_<?php echo $index; ?>" id="q<?php echo $index; ?>_<?php echo $choiceIndex; ?>" value="<?php echo $choiceIndex; ?>">
-                        <label class="form-check-label" for="q<?php echo $index; ?>_<?php echo $choiceIndex; ?>">
-                            <?php echo htmlspecialchars($choice, ENT_QUOTES, 'UTF-8'); ?>
-                        </label>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        <?php endforeach; ?>
-        <button type="submit" class="btn btn-primary">Submit</button>
-    </form>
+    <div id="quiz-area">
+        <p id="question" class="fw-bold"></p>
+        <form id="choices"></form>
+        <div id="result" class="mt-3 fw-bold"></div>
+        <div id="explanation" class="mt-2"></div>
+        <button id="submitBtn" class="btn btn-primary mt-3">回答する</button>
+        <button id="nextBtn" class="btn btn-secondary mt-3" style="display:none;">次の問題へ</button>
+    </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const questions = <?php echo json_encode($questions, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+let current = 0;
+
+const qEl = document.getElementById('question');
+const choicesEl = document.getElementById('choices');
+const resultEl = document.getElementById('result');
+const expEl = document.getElementById('explanation');
+const submitBtn = document.getElementById('submitBtn');
+const nextBtn = document.getElementById('nextBtn');
+
+function showQuestion() {
+    const q = questions[current];
+    qEl.innerHTML = q.question.replace(/\n/g, '<br>');
+    choicesEl.innerHTML = '';
+    resultEl.textContent = '';
+    expEl.textContent = '';
+    submitBtn.style.display = '';
+    nextBtn.style.display = 'none';
+
+    q.choices.forEach((choice, idx) => {
+        const div = document.createElement('div');
+        div.className = 'form-check';
+
+        const input = document.createElement('input');
+        input.type = 'radio';
+        input.name = 'choice';
+        input.value = idx + 1;
+        input.id = `choice_${idx}`;
+        input.className = 'form-check-input';
+
+        const label = document.createElement('label');
+        label.className = 'form-check-label';
+        label.htmlFor = input.id;
+        label.textContent = choice;
+
+        div.appendChild(input);
+        div.appendChild(label);
+        choicesEl.appendChild(div);
+    });
+}
+
+function checkAnswer() {
+    const selected = choicesEl.querySelector('input[name="choice"]:checked');
+    if (!selected) {
+        alert('回答を選択してください');
+        return;
+    }
+
+    const q = questions[current];
+    const correct = q.answer.trim();
+    let isCorrect = false;
+
+    if (/^\d+$/.test(correct)) {
+        isCorrect = parseInt(selected.value, 10) === parseInt(correct, 10);
+    } else {
+        const choiceText = selected.nextSibling.textContent.trim();
+        isCorrect = choiceText === correct;
+    }
+
+    resultEl.textContent = isCorrect ? '正解！' : '不正解';
+    expEl.innerHTML = q.explanation.replace(/\n/g, '<br>');
+    submitBtn.style.display = 'none';
+    nextBtn.style.display = '';
+}
+
+function nextQuestion() {
+    current++;
+    if (current >= questions.length) {
+        qEl.textContent = 'すべての問題が終了しました';
+        choicesEl.innerHTML = '';
+        resultEl.textContent = '';
+        expEl.textContent = '';
+        submitBtn.style.display = 'none';
+        nextBtn.style.display = 'none';
+        return;
+    }
+    showQuestion();
+}
+
+submitBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    checkAnswer();
+});
+nextBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    nextQuestion();
+});
+
+showQuestion();
+</script>
 </body>
 </html>
