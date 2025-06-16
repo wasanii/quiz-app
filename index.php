@@ -1,6 +1,14 @@
 <?php
 require_once __DIR__ . '/fetch_questions.php';
 
+function formatMeta(string $yearRound, string $number): string {
+    if (preg_match('/R(\d+)-(\d+)/', $yearRound, $m)) {
+        $yearRound = '令和' . intval($m[1]) . '年度 第' . intval($m[2]) . '回';
+    }
+    $num = $number !== '' ? ' 第' . intval($number) . '問' : '';
+    return trim($yearRound . $num);
+}
+
 // Convert raw CSV rows into an array with question, choices, answer and explanation
 $formatted = [];
 foreach ($questions as $i => $row) {
@@ -10,11 +18,13 @@ foreach ($questions as $i => $row) {
     }
 
     // CSV columns: 0:年度, 1:出題方式, 2:番号, 3:問題文, 4-7:選択肢1-4, 8:正答, 9:解説
-    $mode        = $row[1] ?? '';
-    $questionText = $row[3] ?? '';
+    $mode          = $row[1] ?? '';
+    $questionText  = $row[3] ?? '';
     if ($questionText === '') {
         continue;
     }
+
+    $meta = formatMeta($row[0] ?? '', $row[2] ?? '');
 
     if ($mode === '○×') {
         $choiceCols = array_slice($row, 4, 2); // 選択肢1-2
@@ -30,6 +40,7 @@ foreach ($questions as $i => $row) {
         'choices'     => $choices,
         'answer'      => $answer,
         'explanation' => $explanation,
+        'meta'        => $meta,
     ];
 }
 
@@ -49,7 +60,8 @@ $questions = $formatted;
 <div class="container my-5">
     <h1 class="mb-4">Quiz</h1>
     <div id="quiz-area">
-        <p id="question" class="fw-bold"></p>
+        <p id="question" class="fw-bold mb-0"></p>
+        <p id="meta" class="text-end text-muted small mb-2"></p>
         <form id="choices"></form>
         <div id="result" class="mt-3 fw-bold"></div>
         <div id="explanation" class="mt-2"></div>
@@ -65,6 +77,7 @@ const questions = <?php echo json_encode($questions,
 let current = 0;
 
 const qEl = document.getElementById('question');
+const metaEl = document.getElementById('meta');
 const choicesEl = document.getElementById('choices');
 const resultEl = document.getElementById('result');
 const expEl = document.getElementById('explanation');
@@ -83,6 +96,7 @@ function escapeHtml(str) {
 function showQuestion() {
     const q = questions[current];
     qEl.innerHTML = escapeHtml(q.question).replace(/\n/g, '<br>');
+    metaEl.textContent = q.meta || '';
     choicesEl.innerHTML = '';
     resultEl.textContent = '';
     expEl.textContent = '';
@@ -147,6 +161,7 @@ function nextQuestion() {
     current++;
     if (current >= questions.length) {
         qEl.textContent = 'すべての問題が終了しました';
+        metaEl.textContent = '';
         choicesEl.innerHTML = '';
         resultEl.textContent = '';
         expEl.textContent = '';
