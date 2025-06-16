@@ -33,6 +33,8 @@ foreach ($questions as $i => $row) {
     ];
 }
 
+// Randomize question order
+shuffle($formatted);
 $questions = $formatted;
 ?>
 <!DOCTYPE html>
