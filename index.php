@@ -15,6 +15,7 @@ require_once __DIR__ . '/fetch_questions.php';
     <div id="quiz-area">
         <p id="question" class="fw-bold mb-0"></p>
         <p id="meta" class="text-end text-muted small mb-2"></p>
+        <p id="status" class="text-end text-muted small mb-2"></p>
         <form id="choices"></form>
         <div id="result" class="mt-3 fw-bold"></div>
         <div id="explanation" class="mt-2"></div>
@@ -27,15 +28,42 @@ require_once __DIR__ . '/fetch_questions.php';
 const questions = <?php echo json_encode($questions,
     JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG);
 ?>;
+
+const storedCurrent = localStorage.getItem('current');
+const storedScore = localStorage.getItem('score');
 let current = 0;
+let score = 0;
+let answered = false;
+if (storedCurrent !== null && storedScore !== null) {
+    current = parseInt(storedCurrent, 10);
+    score = parseInt(storedScore, 10);
+    if (
+        isNaN(current) || isNaN(score) ||
+        current < 0 || current > questions.length ||
+        score < 0 || score > current
+    ) {
+        current = 0;
+        score = 0;
+    }
+}
 
 const qEl = document.getElementById('question');
 const metaEl = document.getElementById('meta');
+const statusEl = document.getElementById('status');
 const choicesEl = document.getElementById('choices');
 const resultEl = document.getElementById('result');
 const expEl = document.getElementById('explanation');
 const submitBtn = document.getElementById('submitBtn');
 const nextBtn = document.getElementById('nextBtn');
+
+function updateStatus() {
+    const total = questions.length;
+    const answeredCount = current + (answered ? 1 : 0);
+    const remaining = total - answeredCount;
+    const rate = answeredCount > 0 ? Math.round((score / answeredCount) * 100) : 0;
+    statusEl.textContent =
+        `正解数 ${score} / ${answeredCount} 問中 正解率 ${rate}% 残り ${remaining} 問`;
+}
 
 function escapeHtml(str) {
     return str
@@ -47,6 +75,8 @@ function escapeHtml(str) {
 }
 
 function showQuestion() {
+    answered = false;
+    localStorage.setItem('current', current);
     const q = questions[current];
     qEl.innerHTML = escapeHtml(q.question).replace(/\n/g, '<br>');
     metaEl.textContent = q.meta || '';
@@ -55,6 +85,7 @@ function showQuestion() {
     expEl.textContent = '';
     submitBtn.style.display = '';
     nextBtn.style.display = 'none';
+    updateStatus();
 
     q.choices.forEach((choice, idx) => {
         const div = document.createElement('div');
@@ -102,12 +133,16 @@ function checkAnswer() {
 
     if (isCorrect) {
         resultEl.textContent = '正解！';
+        score++;
+        localStorage.setItem('score', score);
     } else {
         resultEl.textContent = `不正解。正解は「${correctText}」`;
     }
     expEl.innerHTML = escapeHtml(q.explanation).replace(/\n/g, '<br>');
     submitBtn.style.display = 'none';
     nextBtn.style.display = '';
+    answered = true;
+    updateStatus();
 }
 
 function nextQuestion() {
@@ -116,10 +151,13 @@ function nextQuestion() {
         qEl.textContent = 'すべての問題が終了しました';
         metaEl.textContent = '';
         choicesEl.innerHTML = '';
-        resultEl.textContent = '';
+        resultEl.textContent = `正解数 ${score} / ${questions.length} 問`;
         expEl.textContent = '';
         submitBtn.style.display = 'none';
         nextBtn.style.display = 'none';
+        localStorage.removeItem('current');
+        localStorage.removeItem('score');
+        statusEl.textContent = '';
         return;
     }
     showQuestion();
