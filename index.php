@@ -33,6 +33,7 @@ const storedCurrent = localStorage.getItem('current');
 const storedScore = localStorage.getItem('score');
 let current = 0;
 let score = 0;
+let answered = false;
 if (storedCurrent !== null && storedScore !== null) {
     current = parseInt(storedCurrent, 10);
     score = parseInt(storedScore, 10);
@@ -57,8 +58,11 @@ const nextBtn = document.getElementById('nextBtn');
 
 function updateStatus() {
     const total = questions.length;
-    const remaining = total - current;
-    statusEl.textContent = `正解数 ${score} / ${total} 問中、残り ${remaining} 問`;
+    const answeredCount = current + (answered ? 1 : 0);
+    const remaining = total - answeredCount;
+    const rate = answeredCount > 0 ? Math.round((score / answeredCount) * 100) : 0;
+    statusEl.textContent =
+        `正解数 ${score} / ${answeredCount} 問中 正解率 ${rate}% 残り ${remaining} 問`;
 }
 
 function escapeHtml(str) {
@@ -71,6 +75,7 @@ function escapeHtml(str) {
 }
 
 function showQuestion() {
+    answered = false;
     localStorage.setItem('current', current);
     const q = questions[current];
     qEl.innerHTML = escapeHtml(q.question).replace(/\n/g, '<br>');
@@ -136,6 +141,7 @@ function checkAnswer() {
     expEl.innerHTML = escapeHtml(q.explanation).replace(/\n/g, '<br>');
     submitBtn.style.display = 'none';
     nextBtn.style.display = '';
+    answered = true;
     updateStatus();
 }
 
