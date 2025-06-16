@@ -1,52 +1,5 @@
 <?php
 require_once __DIR__ . '/fetch_questions.php';
-
-function formatMeta(string $yearRound, string $number): string {
-    if (preg_match('/R(\d+)-(\d+)/', $yearRound, $m)) {
-        $yearRound = '令和' . intval($m[1]) . '年度 第' . intval($m[2]) . '回';
-    }
-    $num = $number !== '' ? ' 第' . intval($number) . '問' : '';
-    return trim($yearRound . $num);
-}
-
-// Convert raw CSV rows into an array with question, choices, answer and explanation
-$formatted = [];
-foreach ($questions as $i => $row) {
-    // Skip header row returned from the CSV
-    if ($i === 0) {
-        continue;
-    }
-
-    // CSV columns: 0:年度, 1:出題方式, 2:番号, 3:問題文, 4-7:選択肢1-4, 8:正答, 9:解説
-    $mode          = $row[1] ?? '';
-    $questionText  = $row[3] ?? '';
-    if ($questionText === '') {
-        continue;
-    }
-
-    $meta = formatMeta($row[0] ?? '', $row[2] ?? '');
-
-    if ($mode === '○×') {
-        $choiceCols = array_slice($row, 4, 2); // 選択肢1-2
-    } else {
-        $choiceCols = array_slice($row, 4, 4); // 選択肢1-4 (不足分は除外)
-    }
-    $choices = array_values(array_filter($choiceCols, fn($c) => $c !== ''));
-    $answer      = $row[8] ?? '';
-    $explanation = $row[9] ?? '';
-
-    $formatted[] = [
-        'question'    => $questionText,
-        'choices'     => $choices,
-        'answer'      => $answer,
-        'explanation' => $explanation,
-        'meta'        => $meta,
-    ];
-}
-
-// Randomize question order
-shuffle($formatted);
-$questions = $formatted;
 ?>
 <!DOCTYPE html>
 <html lang="ja">
