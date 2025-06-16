@@ -69,9 +69,18 @@ const expEl = document.getElementById('explanation');
 const submitBtn = document.getElementById('submitBtn');
 const nextBtn = document.getElementById('nextBtn');
 
+function escapeHtml(str) {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 function showQuestion() {
     const q = questions[current];
-    qEl.innerHTML = q.question.replace(/\n/g, '<br>');
+    qEl.innerHTML = escapeHtml(q.question).replace(/\n/g, '<br>');
     choicesEl.innerHTML = '';
     resultEl.textContent = '';
     expEl.textContent = '';
@@ -119,7 +128,7 @@ function checkAnswer() {
     }
 
     resultEl.textContent = isCorrect ? '正解！' : '不正解';
-    expEl.innerHTML = q.explanation.replace(/\n/g, '<br>');
+    expEl.innerHTML = escapeHtml(q.explanation).replace(/\n/g, '<br>');
     submitBtn.style.display = 'none';
     nextBtn.style.display = '';
 }
