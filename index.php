@@ -121,15 +121,23 @@ function checkAnswer() {
     const q = questions[current];
     const correct = q.answer.trim();
     let isCorrect = false;
+    let correctText = '';
 
     if (/^\d+$/.test(correct)) {
+        const idx = parseInt(correct, 10) - 1;
+        correctText = q.choices[idx] || '';
         isCorrect = parseInt(selected.value, 10) === parseInt(correct, 10);
     } else {
         const choiceText = selected.nextSibling.textContent.trim();
+        correctText = correct;
         isCorrect = choiceText === correct;
     }
 
-    resultEl.textContent = isCorrect ? '正解！' : '不正解';
+    if (isCorrect) {
+        resultEl.textContent = '正解！';
+    } else {
+        resultEl.textContent = `不正解。正解は「${correctText}」`;
+    }
     expEl.innerHTML = escapeHtml(q.explanation).replace(/\n/g, '<br>');
     submitBtn.style.display = 'none';
     nextBtn.style.display = '';
