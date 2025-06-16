@@ -28,13 +28,22 @@ require_once __DIR__ . '/fetch_questions.php';
 const questions = <?php echo json_encode($questions,
     JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG);
 ?>;
-let current = parseInt(localStorage.getItem('current') || '0', 10);
-if (isNaN(current) || current < 0 || current >= questions.length) {
-    current = 0;
-}
-let score = parseInt(localStorage.getItem('score') || '0', 10);
-if (isNaN(score) || score < 0) {
-    score = 0;
+
+const storedCurrent = localStorage.getItem('current');
+const storedScore = localStorage.getItem('score');
+let current = 0;
+let score = 0;
+if (storedCurrent !== null && storedScore !== null) {
+    current = parseInt(storedCurrent, 10);
+    score = parseInt(storedScore, 10);
+    if (
+        isNaN(current) || isNaN(score) ||
+        current < 0 || current > questions.length ||
+        score < 0 || score > current
+    ) {
+        current = 0;
+        score = 0;
+    }
 }
 
 const qEl = document.getElementById('question');
@@ -47,8 +56,9 @@ const submitBtn = document.getElementById('submitBtn');
 const nextBtn = document.getElementById('nextBtn');
 
 function updateStatus() {
-    const remaining = questions.length - current;
-    statusEl.textContent = `正解数 ${score} / ${current} 問解答済、残り ${remaining} 問`;
+    const total = questions.length;
+    const remaining = total - current;
+    statusEl.textContent = `正解数 ${score} / ${total} 問中、残り ${remaining} 問`;
 }
 
 function escapeHtml(str) {
