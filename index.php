@@ -27,10 +27,7 @@ require_once __DIR__ . '/fetch_questions.php';
 const questions = <?php echo json_encode($questions,
     JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG);
 ?>;
-let current = parseInt(localStorage.getItem('current') || '0', 10);
-if (isNaN(current) || current < 0 || current >= questions.length) {
-    current = 0;
-}
+let current = 0;
 
 const qEl = document.getElementById('question');
 const metaEl = document.getElementById('meta');
@@ -50,7 +47,6 @@ function escapeHtml(str) {
 }
 
 function showQuestion() {
-    localStorage.setItem('current', current);
     const q = questions[current];
     qEl.innerHTML = escapeHtml(q.question).replace(/\n/g, '<br>');
     metaEl.textContent = q.meta || '';
@@ -124,7 +120,6 @@ function nextQuestion() {
         expEl.textContent = '';
         submitBtn.style.display = 'none';
         nextBtn.style.display = 'none';
-        localStorage.removeItem('current');
         return;
     }
     showQuestion();

@@ -28,7 +28,6 @@ function formatMeta(string $yearRound, string $number): string {
 
 function formatQuestions(array $rows): array {
     $formatted = [];
-    $id = 1;
     foreach ($rows as $i => $row) {
         if ($i === 0) {
             continue; // header
@@ -52,7 +51,6 @@ function formatQuestions(array $rows): array {
         $explanation = $row[9] ?? '';
 
         $formatted[] = [
-            'id'          => $id++,
             'question'    => $questionText,
             'choices'     => $choices,
             'answer'      => $answer,
