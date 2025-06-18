@@ -34,23 +34,24 @@ const questions = <?php echo json_encode($questions,
     JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG);
 ?>;
 
-const storedCurrent = localStorage.getItem('current');
+const storedSolved = localStorage.getItem('solved');
 const storedScore = localStorage.getItem('score');
-let current = 0;
+let solvedIds = [];
 let score = 0;
 let answered = false;
-if (storedCurrent !== null && storedScore !== null) {
-    current = parseInt(storedCurrent, 10);
-    score = parseInt(storedScore, 10);
-    if (
-        isNaN(current) || isNaN(score) ||
-        current < 0 || current > questions.length ||
-        score < 0 || score > current
-    ) {
-        current = 0;
-        score = 0;
-    }
+try {
+    solvedIds = storedSolved ? JSON.parse(storedSolved) : [];
+    if (!Array.isArray(solvedIds)) solvedIds = [];
+} catch (e) {
+    solvedIds = [];
 }
+if (storedScore !== null) {
+    score = parseInt(storedScore, 10);
+    if (isNaN(score) || score < 0) score = 0;
+}
+
+let unanswered = questions.filter(q => !solvedIds.includes(q.id));
+let currentQuestion = null;
 
 const qEl = document.getElementById('question');
 const metaEl = document.getElementById('meta');
@@ -63,7 +64,7 @@ const nextBtn = document.getElementById('nextBtn');
 
 function updateStatus() {
     const total = questions.length;
-    const answeredCount = current + (answered ? 1 : 0);
+    const answeredCount = solvedIds.length;
     const remaining = total - answeredCount;
     const rate = answeredCount > 0 ? Math.round((score / answeredCount) * 100) : 0;
     statusEl.textContent =
@@ -79,10 +80,9 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
-function showQuestion() {
+function showQuestion(q) {
     answered = false;
-    localStorage.setItem('current', current);
-    const q = questions[current];
+    currentQuestion = q;
     qEl.innerHTML = escapeHtml(q.question).replace(/\n/g, '<br>');
     metaEl.textContent = q.meta || '';
     choicesEl.innerHTML = '';
@@ -121,7 +121,7 @@ function checkAnswer() {
         return;
     }
 
-    const q = questions[current];
+    const q = currentQuestion;
     const correct = q.answer.trim();
     let isCorrect = false;
     let correctText = '';
@@ -143,6 +143,10 @@ function checkAnswer() {
     } else {
         resultEl.textContent = `不正解。正解は「${correctText}」`;
     }
+    if (!solvedIds.includes(q.id)) {
+        solvedIds.push(q.id);
+        localStorage.setItem('solved', JSON.stringify(solvedIds));
+    }
     expEl.innerHTML = escapeHtml(q.explanation).replace(/\n/g, '<br>');
     submitBtn.style.display = 'none';
     nextBtn.style.display = '';
@@ -150,9 +154,18 @@ function checkAnswer() {
     updateStatus();
 }
 
+function pickNextQuestion() {
+    if (unanswered.length === 0) {
+        return null;
+    }
+    const idx = Math.floor(Math.random() * unanswered.length);
+    const q = unanswered.splice(idx, 1)[0];
+    return q;
+}
+
 function nextQuestion() {
-    current++;
-    if (current >= questions.length) {
+    const q = pickNextQuestion();
+    if (!q) {
         qEl.textContent = 'すべての問題が終了しました';
         metaEl.textContent = '';
         choicesEl.innerHTML = '';
@@ -160,12 +173,12 @@ function nextQuestion() {
         expEl.textContent = '';
         submitBtn.style.display = 'none';
         nextBtn.style.display = 'none';
-        localStorage.removeItem('current');
+        localStorage.removeItem('solved');
         localStorage.removeItem('score');
         statusEl.textContent = '';
         return;
     }
-    showQuestion();
+    showQuestion(q);
 }
 
 submitBtn.addEventListener('click', (e) => {
@@ -177,7 +190,7 @@ nextBtn.addEventListener('click', (e) => {
     nextQuestion();
 });
 
-showQuestion();
+nextQuestion();
 </script>
 </body>
 </html>

@@ -26,8 +26,9 @@ how many questions remain. For example:
 
 ## Progress storage
 
-Your current question index and the number of correct answers are stored in the
-browser using `localStorage` under the keys `current` and `score`. When the
-page is reloaded it resumes from that index with your score intact. To reset
-your progress, open your browser's developer tools, locate the `localStorage`
-entry for the site and remove both items (or clear all stored data).
+The app stores the IDs of questions you have answered in `localStorage` under
+the key `solved`. The number of correct answers is stored under `score`. When
+the page loads it filters out any solved questions and serves one of the
+remaining questions at random. To reset your progress, open your browser's
+developer tools and remove both the `solved` and `score` entries (or clear all
+stored data).
