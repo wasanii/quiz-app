@@ -17,6 +17,10 @@ require_once __DIR__ . '/fetch_questions.php';
 <body>
 <div class="container my-5">
     <h1 class="mb-4">Quiz</h1>
+    <div class="form-check form-switch mb-3">
+        <input class="form-check-input" type="checkbox" id="reviewToggle">
+        <label class="form-check-label" for="reviewToggle">復習モード</label>
+    </div>
     <div id="quiz-area">
         <p id="question" class="fw-bold mb-0"></p>
         <p id="meta" class="text-end text-muted small mb-2"></p>
@@ -36,7 +40,10 @@ const questions = <?php echo json_encode($questions,
 
 const storedSolved = localStorage.getItem('solved');
 const storedScore = localStorage.getItem('score');
+const storedIncorrect = localStorage.getItem('incorrect');
+const storedReview = localStorage.getItem('reviewMode');
 let solvedIds = [];
+let incorrectIds = [];
 let score = 0;
 let answered = false;
 try {
@@ -45,12 +52,31 @@ try {
 } catch (e) {
     solvedIds = [];
 }
+try {
+    incorrectIds = storedIncorrect ? JSON.parse(storedIncorrect) : [];
+    if (!Array.isArray(incorrectIds)) incorrectIds = [];
+} catch (e) {
+    incorrectIds = [];
+}
+let reviewMode = storedReview === '1';
 if (storedScore !== null) {
     score = parseInt(storedScore, 10);
     if (isNaN(score) || score < 0) score = 0;
 }
 
-let unanswered = questions.filter(q => !solvedIds.includes(q.id));
+let unanswered = [];
+let initialIncorrectCount = 0;
+
+function initQuestionPool() {
+    if (reviewMode) {
+        unanswered = questions.filter(q => incorrectIds.includes(q.id));
+        initialIncorrectCount = unanswered.length;
+    } else {
+        unanswered = questions.filter(q => !solvedIds.includes(q.id));
+    }
+}
+
+initQuestionPool();
 let currentQuestion = null;
 
 const qEl = document.getElementById('question');
@@ -61,14 +87,27 @@ const resultEl = document.getElementById('result');
 const expEl = document.getElementById('explanation');
 const submitBtn = document.getElementById('submitBtn');
 const nextBtn = document.getElementById('nextBtn');
+const reviewToggle = document.getElementById('reviewToggle');
+
+reviewToggle.checked = reviewMode;
 
 function updateStatus() {
-    const total = questions.length;
-    const answeredCount = solvedIds.length;
-    const remaining = total - answeredCount;
-    const rate = answeredCount > 0 ? Math.round((score / answeredCount) * 100) : 0;
-    statusEl.textContent =
-        `正解数 ${score} / ${answeredCount} 問中 正解率 ${rate}% 残り ${remaining} 問`;
+    if (reviewMode) {
+        const total = initialIncorrectCount;
+        const remaining = unanswered.length;
+        const answeredCount = total - remaining;
+        const reviewScore = total - incorrectIds.length;
+        const rate = answeredCount > 0 ? Math.round((reviewScore / answeredCount) * 100) : 0;
+        statusEl.textContent =
+            `復習 正解数 ${reviewScore} / ${answeredCount} 問中 正解率 ${rate}% 残り ${remaining} 問`;
+    } else {
+        const total = questions.length;
+        const answeredCount = solvedIds.length;
+        const remaining = total - answeredCount;
+        const rate = answeredCount > 0 ? Math.round((score / answeredCount) * 100) : 0;
+        statusEl.textContent =
+            `正解数 ${score} / ${answeredCount} 問中 正解率 ${rate}% 残り ${remaining} 問`;
+    }
 }
 
 function escapeHtml(str) {
@@ -140,8 +179,17 @@ function checkAnswer() {
         resultEl.textContent = '正解！';
         score++;
         localStorage.setItem('score', score);
+        const idx = incorrectIds.indexOf(q.id);
+        if (idx !== -1) {
+            incorrectIds.splice(idx, 1);
+            localStorage.setItem('incorrect', JSON.stringify(incorrectIds));
+        }
     } else {
         resultEl.textContent = `不正解。正解は「${correctText}」`;
+        if (!incorrectIds.includes(q.id)) {
+            incorrectIds.push(q.id);
+            localStorage.setItem('incorrect', JSON.stringify(incorrectIds));
+        }
     }
     if (!solvedIds.includes(q.id)) {
         solvedIds.push(q.id);
@@ -166,15 +214,24 @@ function pickNextQuestion() {
 function nextQuestion() {
     const q = pickNextQuestion();
     if (!q) {
-        qEl.textContent = 'すべての問題が終了しました';
+        if (reviewMode) {
+            qEl.textContent = '復習する問題はありません';
+        } else {
+            qEl.textContent = 'すべての問題が終了しました';
+        }
         metaEl.textContent = '';
         choicesEl.innerHTML = '';
-        resultEl.textContent = `正解数 ${score} / ${questions.length} 問`;
+        resultEl.textContent = reviewMode ? '' : `正解数 ${score} / ${questions.length} 問`;
         expEl.textContent = '';
         submitBtn.style.display = 'none';
         nextBtn.style.display = 'none';
-        localStorage.removeItem('solved');
-        localStorage.removeItem('score');
+        if (!reviewMode) {
+            localStorage.removeItem('solved');
+            localStorage.removeItem('score');
+        }
+        if (incorrectIds.length === 0) {
+            localStorage.removeItem('incorrect');
+        }
         statusEl.textContent = '';
         return;
     }
@@ -187,6 +244,12 @@ submitBtn.addEventListener('click', (e) => {
 });
 nextBtn.addEventListener('click', (e) => {
     e.preventDefault();
+    nextQuestion();
+});
+reviewToggle.addEventListener('change', () => {
+    reviewMode = reviewToggle.checked;
+    localStorage.setItem('reviewMode', reviewMode ? '1' : '0');
+    initQuestionPool();
     nextQuestion();
 });
 

@@ -15,6 +15,13 @@ contain an `id` field:
 php test_format.php
 ```
 
+The `test_review.js` script verifies the logic around the new review mode
+without requiring all 200 questions:
+
+```bash
+node test_review.js
+```
+
 The quiz contains 200 questions in total (40 questions for each of the last five
 years). Your progress line shows how many answers you've gotten correct out of
 the number of questions you have attempted so far, along with your accuracy and
@@ -27,8 +34,11 @@ how many questions remain. For example:
 ## Progress storage
 
 The app stores the IDs of questions you have answered in `localStorage` under
-the key `solved`. The number of correct answers is stored under `score`. When
-the page loads it filters out any solved questions and serves one of the
-remaining questions at random. To reset your progress, open your browser's
-developer tools and remove both the `solved` and `score` entries (or clear all
-stored data).
+the key `solved`. The number of correct answers is stored under `score`. IDs of
+incorrectly answered questions are stored under `incorrect`. Enable "復習モード"
+using the switch on the page to practice only those questions. Correct answers
+in this mode remove the corresponding ID from `incorrect` so you can repeat
+until all are solved. When the page loads it filters questions according to the
+current mode. To reset your progress, open your browser's developer tools and
+remove the `solved`, `score` and `incorrect` entries (or clear all stored
+data).
