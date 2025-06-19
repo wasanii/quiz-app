@@ -6,7 +6,7 @@ require_once __DIR__ . '/fetch_questions.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Quiz</title>
+    <title>ウェブデザイン技能検定 過去問練習アプリ</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
     #question, #explanation {
@@ -16,7 +16,7 @@ require_once __DIR__ . '/fetch_questions.php';
 </head>
 <body>
 <div class="container my-5">
-    <h1 class="mb-4">Quiz</h1>
+    <h1 class="mb-4">ウェブデザイン技能検定 学科 過去問</h1>
     <div class="form-check form-switch mb-3">
         <input class="form-check-input" type="checkbox" id="reviewToggle">
         <label class="form-check-label" for="reviewToggle">復習モード</label>
