@@ -28,7 +28,6 @@ require_once __DIR__ . '/fetch_questions.php';
         <form id="choices"></form>
         <div id="result" class="mt-3 fw-bold"></div>
         <div id="explanation" class="mt-2"></div>
-        <button id="submitBtn" class="btn btn-primary mt-3">回答する</button>
         <button id="nextBtn" class="btn btn-secondary mt-3" style="display:none;">次の問題へ</button>
     </div>
 </div>
@@ -85,9 +84,8 @@ const statusEl = document.getElementById('status');
 const choicesEl = document.getElementById('choices');
 const resultEl = document.getElementById('result');
 const expEl = document.getElementById('explanation');
-const submitBtn = document.getElementById('submitBtn');
-const nextBtn = document.getElementById('nextBtn');
-const reviewToggle = document.getElementById('reviewToggle');
+const nextBtn = document.getElementById("nextBtn");
+const reviewToggle = document.getElementById("reviewToggle");
 
 reviewToggle.checked = reviewMode;
 
@@ -127,38 +125,21 @@ function showQuestion(q) {
     choicesEl.innerHTML = '';
     resultEl.textContent = '';
     expEl.textContent = '';
-    submitBtn.style.display = '';
     nextBtn.style.display = 'none';
     updateStatus();
 
     q.choices.forEach((choice, idx) => {
-        const div = document.createElement('div');
-        div.className = 'form-check';
-
-        const input = document.createElement('input');
-        input.type = 'radio';
-        input.name = 'choice';
-        input.value = idx + 1;
-        input.id = `choice_${idx}`;
-        input.className = 'form-check-input';
-
-        const label = document.createElement('label');
-        label.className = 'form-check-label';
-        label.htmlFor = input.id;
-        label.textContent = choice;
-
-        div.appendChild(input);
-        div.appendChild(label);
-        choicesEl.appendChild(div);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-outline-primary d-block mb-2';
+        btn.textContent = choice;
+        btn.dataset.value = idx + 1;
+        btn.addEventListener('click', () => checkAnswer(idx + 1));
+        choicesEl.appendChild(btn);
     });
 }
 
-function checkAnswer() {
-    const selected = choicesEl.querySelector('input[name="choice"]:checked');
-    if (!selected) {
-        alert('回答を選択してください');
-        return;
-    }
+function checkAnswer(selectedVal) {
 
     const q = currentQuestion;
     const correct = q.answer.trim();
@@ -168,9 +149,9 @@ function checkAnswer() {
     if (/^\d+$/.test(correct)) {
         const idx = parseInt(correct, 10) - 1;
         correctText = q.choices[idx] || '';
-        isCorrect = parseInt(selected.value, 10) === parseInt(correct, 10);
+        isCorrect = parseInt(selectedVal, 10) === parseInt(correct, 10);
     } else {
-        const choiceText = selected.nextSibling.textContent.trim();
+        const choiceText = q.choices[selectedVal - 1];
         correctText = correct;
         isCorrect = choiceText === correct;
     }
@@ -196,7 +177,6 @@ function checkAnswer() {
         localStorage.setItem('solved', JSON.stringify(solvedIds));
     }
     expEl.innerHTML = escapeHtml(q.explanation).replace(/\n/g, '<br>');
-    submitBtn.style.display = 'none';
     nextBtn.style.display = '';
     answered = true;
     updateStatus();
@@ -223,7 +203,6 @@ function nextQuestion() {
         choicesEl.innerHTML = '';
         resultEl.textContent = reviewMode ? '' : `正解数 ${score} / ${questions.length} 問`;
         expEl.textContent = '';
-        submitBtn.style.display = 'none';
         nextBtn.style.display = 'none';
         if (!reviewMode) {
             localStorage.removeItem('solved');
@@ -238,10 +217,6 @@ function nextQuestion() {
     showQuestion(q);
 }
 
-submitBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    checkAnswer();
-});
 nextBtn.addEventListener('click', (e) => {
     e.preventDefault();
     nextQuestion();
