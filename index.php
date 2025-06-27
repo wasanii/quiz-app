@@ -8,6 +8,7 @@ require_once __DIR__ . '/fetch_questions.php';
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ウェブデザイン技能検定 過去問練習アプリ</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon.png">
     <style>
     #question, #explanation {
         white-space: pre-wrap;
