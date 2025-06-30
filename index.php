@@ -87,6 +87,7 @@ const resultEl = document.getElementById('result');
 const expEl = document.getElementById('explanation');
 const nextBtn = document.getElementById("nextBtn");
 const reviewToggle = document.getElementById("reviewToggle");
+let selectedButton = null;
 
 reviewToggle.checked = reviewMode;
 
@@ -120,6 +121,7 @@ function escapeHtml(str) {
 
 function showQuestion(q) {
     answered = false;
+    selectedButton = null;
     currentQuestion = q;
     qEl.innerHTML = escapeHtml(q.question).replace(/\n/g, '<br>');
     metaEl.textContent = q.meta || '';
@@ -135,12 +137,14 @@ function showQuestion(q) {
         btn.className = 'btn btn-outline-primary d-block mb-2';
         btn.textContent = choice;
         btn.dataset.value = idx + 1;
-        btn.addEventListener('click', () => checkAnswer(idx + 1));
+        btn.addEventListener('click', () => checkAnswer(idx + 1, btn));
         choicesEl.appendChild(btn);
     });
 }
 
-function checkAnswer(selectedVal) {
+function checkAnswer(selectedVal, btn) {
+
+    if (answered) return;
 
     const q = currentQuestion;
     const correct = q.answer.trim();
@@ -176,6 +180,11 @@ function checkAnswer(selectedVal) {
     if (!solvedIds.includes(q.id)) {
         solvedIds.push(q.id);
         localStorage.setItem('solved', JSON.stringify(solvedIds));
+    }
+    selectedButton = btn;
+    if (selectedButton) {
+        selectedButton.classList.remove('btn-outline-primary');
+        selectedButton.classList.add('btn-primary');
     }
     expEl.innerHTML = escapeHtml(q.explanation).replace(/\n/g, '<br>');
     nextBtn.style.display = '';
